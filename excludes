@@ -1,0 +1,6 @@
+# These files will be excluded from the rsync 
+# maybe you don't want certain arches or source RPMs
+ppc/
+ppc64/
+# skip source RPMs for now until we see how much space we have
+source/

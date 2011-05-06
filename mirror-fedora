@@ -1,0 +1,86 @@
+#!/bin/sh
+################################################################################
+# mirror-fedora - Dale Bewley < dale a/t bewley.net >
+#-------------------------------------------------------------------------------
+# Script used to rsync a mirror. Originally designed for a Fedora mirror.
+#
+# See the README 
+#
+# NOTE!
+#  This script has not been tested since numerous changes have been made to it!
+#  You better not trust it!
+################################################################################
+
+#-- Configuration --------------------------------------------------------------
+RSYNC_HOST=mirror.tier1.domain
+RSYNC_MODULE=fedora-enchilada
+RSYNC_USER=user
+RSYNC_PASS=/etc/mirror-fedora/password
+RSYNC_EXCLUDES=/etc/mirror-fedora/excludes
+RSYNC_PARTIAL_DIR=.rsync-partial-dir
+# Uncomment for a more interesting manual run (not cron)
+#RSYNC_BONUS_ARGS="-h --stats --progress"
+MIRROR_ROOT=/var/www/html/pub/mirrors/fedora
+LOCK_FILE=/var/run/mirror-fedora/running
+LAST_RUN=/usr/share/mirror-fedora/last-run
+RSYNC_FILTER_URL='https://admin.fedoraproject.org/mirrormanager/rsyncFilter?categories=Fedora%20Linux&stripprefix=pub/fedora'
+#-------------------------------------------------------------------------------
+
+start_time=`date +%s`
+
+if [ -f "$LOCK_FILE" ]; then
+    OLD_PID=`head -n 1 "$LOCK_FILE"`
+    TEST_RUNNING=`ps -p $OLD_PID | grep $OLD_PID`
+    if [ -z "$TEST_RUNNING" ]; then
+        echo "Stale PID [$OLD_PID] found in $LOCK_FILE. Overriding."
+        echo $$ > "$LOCK_FILE"
+    else
+        echo "`basename $0` is already running [$OLD_PID]"
+        exit 0
+    fi
+else
+    # Not running
+    echo $$ > "$LOCK_FILE"
+fi
+
+# get time of last run in format suitable for MM query
+if [ -r "$LAST_RUN"]; then
+    last_run_epoch_utc=$(date --utc +%s --date "`stat --printf %z $LAST_RUN`")
+else
+    last_run_epoch_utc=0
+fi
+
+# download an exclude file which serves to *include* dirs that have changed
+# since X and to exclude all else. be sure to place this exclude last
+unchanged_content_exclude=`mktemp rsync.XXXXXXXX`
+curl "${RSYNC_FILTER_URL}&since=${last_run_epoch_utc}" \
+	> "$unchanged_content_exclude"
+
+rsync ${RSYNC_BONUS_ARGS} \
+    --verbose \
+    --archive \
+    --hard-links \
+    --numeric-ids \
+    --password-file=${RSYNC_PASS} \
+    --partial-dir=${RSYNC_PARTIAL_DIR} \
+    --delete \
+    --delete-after \
+    --delay-updates \
+    --exclude=${RSYNC_PARTIAL_DIR} \
+    --exclude-from=${RSYNC_EXCLUDES} \
+    --exclude-from=${unchanged_content_exclude} \
+    rsync://${RSYNC_USER}@${RSYNC_HOST}/${RSYNC_MODULE}/ \
+    $MIRROR_ROOT
+
+# acceptable rsync exit codes:
+#       0      Success
+#       23     Partial transfer due to error
+#       24     Partial transfer due to vanished source files
+if [ $? -eq 0 -o $? -eq 23 -o $? -eq 24 ] then
+	touch --date @$($start_time - 30) $LAST_RUN
+	# update mirror status in the MirrorManager database
+	report_mirror
+fi
+
+rm -f "$unchanged_content_list"
+rm -f "$LOCK_FILE"

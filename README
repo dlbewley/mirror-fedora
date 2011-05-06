@@ -1,0 +1,34 @@
+A script to update a Fedora mirror. 
+
+Avoids "null rsyncs" by using MirrorManager rsyncFilter feature, so it
+only syncs directories containing content which has changed since the 
+last successful run:
+ https://www.redhat.com/mailman/private/mirror-list-d/2009-April/msg00007.html
+
+Report_mirror is called after a successful sync, so be sure to configure URL
+and password in /etc/mirrormanager-client/report_mirror.conf
+
+Find an upstream mirror to rsync from, and adjust the variables in the script.
+If you are running a public mirror you should ask a tier 1 mirror for private
+access.
+
+This script has not been tested since numerous changes were made!
+
+See also
+      o http://fedoraproject.org/wiki/Infrastructure/Mirroring
+      o http://fedoraproject.org/wiki/Infrastructure/Mirroring/Tiering
+      o http://fedoraproject.org/wiki/Infrastructure/MirrorManager
+      o http://download.fedora.redhat.com/pub/DIRECTORY_SIZES.txt
+
+The long list of rsync args used were culled from the mirror list over time,
+if you have any suggestions or complaints let me know.
+
+Files:
+======
+README			this file
+mirror-fedora		script to rsync and run report_mirror
+mirror-fedora.cron	run script every so often
+excludes	        things always exclude from the mirror (srpms for example)
+password		file containing rsync password
+mirror-fedora-tmpfiles.conf satisfies 
+			http://fedoraproject.org/wiki/Features/var-run-tmpfs

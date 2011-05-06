@@ -1,0 +1,2 @@
+# rsync from upstream fedora mirror every 5 hours
+45 */5 * * *  root /usr/bin/mirror-fedora > /dev/null

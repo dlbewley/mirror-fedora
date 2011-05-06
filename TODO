@@ -1,0 +1,3 @@
+Don't run as root.
+Don't assume authenticated rsync.
+Move config vars to a config file.
