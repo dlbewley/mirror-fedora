@@ -5,6 +5,9 @@ only syncs directories containing content which has changed since the
 last successful run:
  https://www.redhat.com/mailman/private/mirror-list-d/2009-April/msg00007.html
 
+Unfortunately the above is only useful for tier 1 mirrors. You are probably
+a tier 2. So, this feature needs to be made optional rather than default.
+
 Report_mirror is called after a successful sync, so be sure to configure URL
 and password in /etc/mirrormanager-client/report_mirror.conf
 
