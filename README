@@ -1,37 +1,99 @@
 A script to update a Fedora mirror. 
 
-Avoids "null rsyncs" by using MirrorManager rsyncFilter feature, so it
-only syncs directories containing content which has changed since the 
-last successful run:
- https://www.redhat.com/mailman/private/mirror-list-d/2009-April/msg00007.html
-
-Unfortunately the above is only useful for tier 1 mirrors. You are probably
-a tier 2. So, this feature needs to be made optional rather than default.
-
-Report_mirror is called after a successful sync, so be sure to configure URL
-and password in /etc/mirrormanager-client/report_mirror.conf
-
-Find an upstream mirror to rsync from, and adjust the variables in the script.
-If you are running a public mirror you should ask a tier 1 mirror for private
-access.
+= NOTE! =
 
 This script has not been tested since numerous changes were made!
 
-See also
-      o http://fedoraproject.org/wiki/Infrastructure/Mirroring
-      o http://fedoraproject.org/wiki/Infrastructure/Mirroring/Tiering
-      o http://fedoraproject.org/wiki/Infrastructure/MirrorManager
-      o http://download.fedora.redhat.com/pub/DIRECTORY_SIZES.txt
+= Getting Started =
 
-The long list of rsync args used were culled from the mirror list over time,
+* Make sure you have enough space. 
+How much space do you need?
+
+See http://download.fedora.redhat.com/pub/DIRECTORY_SIZES.txt
+
+* Get yourself a Fedora login.
+
+See https://admin.fedoraproject.org/accounts/
+
+* Become a mirror by registering a site and a host with Fedora MirrorManager.
+
+See http://fedoraproject.org/wiki/Infrastructure/Mirroring
+
+* Find an upstream mirror to rsync from. 
+
+If you are running a public mirror you should ask a tier 1 mirror for 
+private rsync access.
+
+Once you have a upstream rsync host and credentials, adjust the variables in the
+mirror-fedora script.
+
+See http://fedoraproject.org/wiki/Infrastructure/Mirroring/Tiering
+
+* Enable MirrorManager reporting.
+
+Install the mirrormanager-client tool and set your URL
+and password in /etc/mirrormanager-client/report_mirror.conf
+
+After syncing, The contents of your mirror are reported back to Fedora so others
+can be directed to the closes mirror of the content they are seeking.
+
+See http://fedoraproject.org/wiki/Infrastructure/MirrorManager
+
+= Usage =
+
+* See getting started section above.
+* chmod 755 /etc/cron.d/mirror-fedora and enjoy.
+
+== Files ==
+
+* README			
+: this file
+
+* mirror-fedora		
+: script to rsync and run report_mirror
+
+* mirror-fedora.cron	
+: configuration to run script every so often
+
+* mirror-fedora-tmpfiles.conf 
+: satisfies http://fedoraproject.org/wiki/Features/var-run-tmpfs
+
+* excludes	        
+: directories to exclude from mirroring (srpms or exotic architectures for example)
+
+* password	
+: file containing rsync password for upstream mirror
+
+== Notifying  MirrorManager ==
+
+Report_mirror is called after a successful sync, so be sure to install
+mirror-manager-client, and to configure URL
+and password in /etc/mirrormanager-client/report_mirror.conf
+
+== Null rsyncs ==
+
+We can avoid "null rsyncs", as Matt Domsch calles them, by using the
+MirrorManager rsyncFilter feature, which lists all directories changed since
+an arbitrary time.
+
+Syncs may only run on directories containing content which has changed since
+the last successful run.
+
+See  https://www.redhat.com/mailman/private/mirror-list-d/2009-April/msg00007.html
+
+Unfortunately the above is only useful for tier 1 mirrors. Because it presents 
+the list of recent changes on the tier 0 mirrors. You are probably
+a tier 2, so this feature could lead to your mirror becoming inconsistent with
+tier 0.
+
+It fix for this problem, has been suggested to be a feature which would
+support a query argument identifying one's upstream mirror.
+
+== Rsync tweaks ==
+
+The long list of rsync args used were culled from the mirror list over time.
+It contains arguments designed to present a consistent view of your mirror
+to users even during an active rsync.
+
 if you have any suggestions or complaints let me know.
 
-Files:
-======
-README			this file
-mirror-fedora		script to rsync and run report_mirror
-mirror-fedora.cron	run script every so often
-excludes	        things always exclude from the mirror (srpms for example)
-password		file containing rsync password
-mirror-fedora-tmpfiles.conf satisfies 
-			http://fedoraproject.org/wiki/Features/var-run-tmpfs
