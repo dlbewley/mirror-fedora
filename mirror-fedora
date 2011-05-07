@@ -4,6 +4,8 @@
 #-------------------------------------------------------------------------------
 # Script used to rsync a mirror. Originally designed for a Fedora mirror.
 #
+# * https://github.com/dlbewley/mirror-fedora
+#
 # See the README 
 #
 # NOTE!
@@ -27,19 +29,21 @@ RSYNC_FILTER_URL='https://admin.fedoraproject.org/mirrormanager/rsyncFilter?cate
 #-------------------------------------------------------------------------------
 
 start_time=`date +%s`
+logger -i -s "start"
 
 if [ -f "$LOCK_FILE" ]; then
     OLD_PID=`head -n 1 "$LOCK_FILE"`
     TEST_RUNNING=`ps -p $OLD_PID | grep $OLD_PID`
     if [ -z "$TEST_RUNNING" ]; then
-        echo "Stale PID [$OLD_PID] found in $LOCK_FILE. Overriding."
+	logger -i -s "Stale PID [$OLD_PID] found in $LOCK_FILE. Overriding."
         echo $$ > "$LOCK_FILE"
     else
-        echo "`basename $0` is already running [$OLD_PID]"
+	logger -i -s "already running with PID $OLD_PID"
         exit 0
     fi
 else
     # Not running
+    logger -i -s "locking before run"
     echo $$ > "$LOCK_FILE"
 fi
 
@@ -49,13 +53,16 @@ if [ -r "$LAST_RUN"]; then
 else
     last_run_epoch_utc=0
 fi
+logger -i -s "last run was " `date --utc --date @$last_run_epoch_utc`
 
+logger -i -s "finding upstream directories changed since last run"
 # download an exclude file which serves to *include* dirs that have changed
 # since X and to exclude all else. be sure to place this exclude last
 unchanged_content_exclude=`mktemp rsync.XXXXXXXX`
 curl "${RSYNC_FILTER_URL}&since=${last_run_epoch_utc}" \
-	> "$unchanged_content_exclude"
+    > "$unchanged_content_exclude"
 
+logger -i -s "begin sync"
 rsync ${RSYNC_BONUS_ARGS} \
     --verbose \
     --archive \
@@ -71,6 +78,7 @@ rsync ${RSYNC_BONUS_ARGS} \
     --exclude-from=${unchanged_content_exclude} \
     rsync://${RSYNC_USER}@${RSYNC_HOST}/${RSYNC_MODULE}/ \
     $MIRROR_ROOT
+logger -i -s "end sync"
 
 # acceptable rsync exit codes:
 #       0      Success
@@ -79,8 +87,10 @@ rsync ${RSYNC_BONUS_ARGS} \
 if [ $? -eq 0 -o $? -eq 23 -o $? -eq 24 ] then
 	touch --date @$($start_time - 30) $LAST_RUN
 	# update mirror status in the MirrorManager database
+	logger -i -s "reporting to mirrormanager"
 	report_mirror
 fi
 
 rm -f "$unchanged_content_list"
 rm -f "$LOCK_FILE"
+logger -i -s "stop"
