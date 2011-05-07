@@ -30,7 +30,7 @@ Automates the update of a Fedora mirror, and reports status to MirrorManager.
 %{__install} -m 0755 -p %{name} %{buildroot}%{_bindir}/
 %{__install} -m 0644 -p excludes %{buildroot}%{_sysconfdir}/%{name}/
 %{__install} -m 0600 -p password %{buildroot}%{_sysconfdir}/%{name}/
-%{__install} -m 0644 -p %{name}.cron %{buildroot}%{_sysconfdir}/cron.d/%{name}
+%{__install} -m 0444 -p %{name}.cron %{buildroot}%{_sysconfdir}/cron.d/%{name}
 %{__install} -m 0644 %{name}-tmpfiles.conf %{buildroot}%{_sysconfdir}/tmpfiles.d/%{name}.conf
 
 %clean 
