@@ -1,4 +1,5 @@
 Don't run as root.
-Don't assume authenticated rsync.
+Support command line args.
 Move config vars to a config file.
-Make exclude list from mirrormanager/rsyncFilter optional, since it's only useful for Tier 1.
+Don't assume authenticated rsync.
+Make exclude list from mirrormanager/rsyncFilter optional.
