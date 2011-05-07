@@ -1,6 +1,12 @@
-# These files will be excluded from the rsync 
-# maybe you don't want certain arches or source RPMs
-ppc/
-ppc64/
-# skip source RPMs for now until we see how much space we have
-source/
+# These files or directories will be excluded from the rsync.
+#
+# Maybe you don't want certain arches or source RPMs. See
+# the rsync man page for syntax.
+#----------------------------------------------------------------------
+#
+# skip powerpc
+#ppc/
+#ppc64/
+#
+# skip source RPMs 
+#source/
