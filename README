@@ -89,11 +89,12 @@ tier 0.
 It fix for this problem, has been suggested to be a feature which would
 support a query argument identifying one's upstream mirror.
 
+It was deamed that this methodology was more trouble that it was worth.
+
 == Rsync tweaks ==
 
 The long list of rsync args used were culled from the mirror list over time.
 It contains arguments designed to present a consistent view of your mirror
 to users even during an active rsync.
 
-if you have any suggestions or complaints let me know.
-
+If you have any suggestions or complaints let me know.

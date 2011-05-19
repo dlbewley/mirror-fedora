@@ -2,4 +2,3 @@ Don't run as root.
 Support command line args.
 Move config vars to a config file.
 Don't assume authenticated rsync.
-Make exclude list from mirrormanager/rsyncFilter optional.

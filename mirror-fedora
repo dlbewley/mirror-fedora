@@ -25,7 +25,8 @@ RSYNC_PARTIAL_DIR=.rsync-partial-dir
 MIRROR_ROOT=/var/www/html/pub/mirrors/fedora
 LOCK_FILE=/var/run/mirror-fedora/running
 LAST_RUN=/usr/share/mirror-fedora/last-run
-RSYNC_FILTER_URL='https://admin.fedoraproject.org/mirrormanager/rsyncFilter?categories=Fedora%20Linux&stripprefix=pub/fedora'
+# this idea is apparently abandoned
+#RSYNC_FILTER_URL='https://admin.fedoraproject.org/mirrormanager/rsyncFilter?categories=Fedora%20Linux&stripprefix=pub/fedora'
 #-------------------------------------------------------------------------------
 
 start_time=`date +%s`
@@ -55,14 +56,17 @@ else
 fi
 logger -i -s "last run was " `date --utc --date @$last_run_epoch_utc`
 
-logger -i -s "finding upstream directories changed since last run"
 # download an exclude file which serves to *include* dirs that have changed
 # since X and to exclude all else. be sure to place this exclude last
-unchanged_content_exclude=`mktemp rsync.XXXXXXXX`
-curl "${RSYNC_FILTER_URL}&since=${last_run_epoch_utc}" \
-    > "$unchanged_content_exclude"
+if [ -n "$RSYNC_FILTER_URL"]; then
+	logger -i -s "finding upstream directories changed since last run"
+	unchanged_content_exclude=`mktemp rsync.XXXXXXXX`
+	curl "${RSYNC_FILTER_URL}&since=${last_run_epoch_utc}" \
+	    > "$unchanged_content_exclude"
+fi
 
 logger -i -s "begin sync"
+# the order of the excludes is significant
 rsync ${RSYNC_BONUS_ARGS} \
     --verbose \
     --archive \
