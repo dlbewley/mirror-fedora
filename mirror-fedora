@@ -8,15 +8,14 @@
 #
 # See the README 
 #
-# NOTE!
-#  This script has not been tested since numerous changes have been made to it!
-#  You better not trust it!
 ################################################################################
 
 #-- Configuration --------------------------------------------------------------
-RSYNC_HOST=mirror.tier1.domain
-RSYNC_MODULE=fedora-enchilada
-RSYNC_USER=user
+RSYNC_HOST=download.fedora.redhat.com
+RSYNC_MODULE=fedora-enchilada0
+# uncomment the following if using authenticated rsync
+#RSYNC_USER=user
+# place password in this file if using authenticated rsync
 RSYNC_PASS=/etc/mirror-fedora/password
 RSYNC_EXCLUDES=/etc/mirror-fedora/excludes
 RSYNC_PARTIAL_DIR=.rsync-partial-dir
@@ -29,22 +28,25 @@ LAST_RUN=/usr/share/mirror-fedora/last-run
 #RSYNC_FILTER_URL='https://admin.fedoraproject.org/mirrormanager/rsyncFilter?categories=Fedora%20Linux&stripprefix=pub/fedora'
 #-------------------------------------------------------------------------------
 
+LOGTAG=`basename $0`
+LOGGER="logger -t $LOGTAG"
+
 start_time=`date +%s`
-logger -i -s "start"
+$LOGGER "start"
 
 if [ -f "$LOCK_FILE" ]; then
     OLD_PID=`head -n 1 "$LOCK_FILE"`
     TEST_RUNNING=`ps -p $OLD_PID | grep $OLD_PID`
     if [ -z "$TEST_RUNNING" ]; then
-	logger -i -s "Stale PID [$OLD_PID] found in $LOCK_FILE. Overriding."
+	$LOGGER "WARNING Stale PID [$OLD_PID] found in $LOCK_FILE. Overriding."
         echo $$ > "$LOCK_FILE"
     else
-	logger -i -s "already running with PID $OLD_PID"
+	$LOGGER  "ERROR already running with PID $OLD_PID"
         exit 0
     fi
 else
     # Not running
-    logger -i -s "locking before run"
+    $LOGGER "locking before run"
     echo $$ > "$LOCK_FILE"
 fi
 
@@ -54,47 +56,57 @@ if [ -r "$LAST_RUN"]; then
 else
     last_run_epoch_utc=0
 fi
-logger -i -s "last run was " `date --utc --date @$last_run_epoch_utc`
+$LOGGER "last run was " `date --utc --date @$last_run_epoch_utc`
 
 # download an exclude file which serves to *include* dirs that have changed
 # since X and to exclude all else. be sure to place this exclude last
-if [ -n "$RSYNC_FILTER_URL"]; then
-	logger -i -s "finding upstream directories changed since last run"
+if [ -n "$RSYNC_FILTER_URL" ]; then
+	$LOGGER "finding upstream directories changed since last run"
 	unchanged_content_exclude=`mktemp rsync.XXXXXXXX`
-	curl "${RSYNC_FILTER_URL}&since=${last_run_epoch_utc}" \
+	curl "${RSYNC_FILTER_URL}\&since=${last_run_epoch_utc}" \
 	    > "$unchanged_content_exclude"
 fi
 
-logger -i -s "begin sync"
+user_arg=''
+password_arg=''
+if [ -n "$RSYNC_USER" ]; then
+	user_arg="${RSYNC_USER}@"
+	password_arg="--password-file=${RSYNC_PASS}"
+fi
+
+$LOGGER "begin sync"
 # the order of the excludes is significant
 rsync ${RSYNC_BONUS_ARGS} \
     --verbose \
     --archive \
     --hard-links \
     --numeric-ids \
-    --password-file=${RSYNC_PASS} \
     --partial-dir=${RSYNC_PARTIAL_DIR} \
     --delete \
-    --delete-after \
+    --delete-delay \
     --delay-updates \
     --exclude=${RSYNC_PARTIAL_DIR} \
     --exclude-from=${RSYNC_EXCLUDES} \
     --exclude-from=${unchanged_content_exclude} \
-    rsync://${RSYNC_USER}@${RSYNC_HOST}/${RSYNC_MODULE}/ \
+    rsync://${user_arg}${RSYNC_HOST}/${RSYNC_MODULE}/ \
+    $password_arg \
     $MIRROR_ROOT
-logger -i -s "end sync"
+$LOGGER "end sync"
 
 # acceptable rsync exit codes:
 #       0      Success
 #       23     Partial transfer due to error
 #       24     Partial transfer due to vanished source files
-if [ $? -eq 0 -o $? -eq 23 -o $? -eq 24 ] then
+if [ $? -eq 0 -o $? -eq 23 -o $? -eq 24 ]; then
 	touch --date @$($start_time - 30) $LAST_RUN
 	# update mirror status in the MirrorManager database
-	logger -i -s "reporting to mirrormanager"
+	$LOGGER "reporting to mirrormanager"
 	report_mirror
+	if [ $? -ne 0 ]; then
+		$LOGGER "ERROR failed to report to mirrormanager"
+	fi
 fi
 
-rm -f "$unchanged_content_list"
+rm -f "$unchanged_content_exclude"
 rm -f "$LOCK_FILE"
-logger -i -s "stop"
+$LOGGER -i -s "stop"
