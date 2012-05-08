@@ -1,7 +1,7 @@
 Name: mirror-fedora
 Summary: Create a mirror of Fedora
 Version: 0.9
-Release: 1.%(date +%%Y%%m%%d.%%H).dlb.%(echo $DIST)
+Release: 2.%(date +%%Y%%m%%d.%%H).dlb.%(echo $DIST)
 License: GPL+
 Group: Applications/System
 URL: http://github.com/dlbewley/%{name}
@@ -30,6 +30,7 @@ Automates the update of a Fedora mirror, and reports status to MirrorManager.
 %{__install} -m 0755 -p %{name} %{buildroot}%{_bindir}/
 %{__install} -m 0644 -p excludes %{buildroot}%{_sysconfdir}/%{name}/
 %{__install} -m 0600 -p password %{buildroot}%{_sysconfdir}/%{name}/
+%{__install} -m 0644 -p %{name}.conf %{buildroot}%{_sysconfdir}/%{name}/
 %{__install} -m 0444 -p %{name}.cron %{buildroot}%{_sysconfdir}/cron.d/%{name}
 %{__install} -m 0644 %{name}-tmpfiles.conf %{buildroot}%{_sysconfdir}/tmpfiles.d/%{name}.conf
 
@@ -52,10 +53,14 @@ rm -fr %{buildroot}
 %{_bindir}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/password
 %config(noreplace) %{_sysconfdir}/%{name}/excludes
+%config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
 %config(noreplace) %{_sysconfdir}/cron.d/%{name}
 %config(noreplace) %{_sysconfdir}/tmpfiles.d/%{name}.conf
 
 %changelog 
+* Tue May 08 2012 Dale Bewley <dale@bewley.net> 0.9-2
+- Add conf file to override MIRROR_ROOT or anything else.
+
 * Thu May 05 2011 Dale Bewley <dale@bewley.net> 0.9
 - Do not include report_mirror, require mirrormanager-client
 - Use tmpfiles.d

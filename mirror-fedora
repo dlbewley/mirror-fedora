@@ -11,7 +11,7 @@
 ################################################################################
 
 #-- Configuration --------------------------------------------------------------
-RSYNC_HOST=download.fedora.redhat.com
+RSYNC_HOST=dl.fedoraproject.org
 RSYNC_MODULE=fedora-enchilada
 # uncomment the following if using authenticated rsync
 #RSYNC_USER=user
@@ -26,7 +26,12 @@ LOCK_FILE=/var/run/mirror-fedora/running
 LAST_RUN=/usr/share/mirror-fedora/last-run
 # this idea is apparently abandoned
 #RSYNC_FILTER_URL='https://admin.fedoraproject.org/mirrormanager/rsyncFilter?categories=Fedora%20Linux&stripprefix=pub/fedora'
+# this file can be used to override the settings found above
+CONFIG=/etc/mirror-fedora/mirror-fedora.conf
 #-------------------------------------------------------------------------------
+
+# override above options as needed
+. $CONFIG
 
 LOGTAG=`basename $0`
 LOGGER="logger -t $LOGTAG"
