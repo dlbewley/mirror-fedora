@@ -12,7 +12,7 @@
 
 #-- Configuration --------------------------------------------------------------
 RSYNC_HOST=download.fedora.redhat.com
-RSYNC_MODULE=fedora-enchilada0
+RSYNC_MODULE=fedora-enchilada
 # uncomment the following if using authenticated rsync
 #RSYNC_USER=user
 # place password in this file if using authenticated rsync
@@ -20,7 +20,7 @@ RSYNC_PASS=/etc/mirror-fedora/password
 RSYNC_EXCLUDES=/etc/mirror-fedora/excludes
 RSYNC_PARTIAL_DIR=.rsync-partial-dir
 # Uncomment for a more interesting manual run (not cron)
-#RSYNC_BONUS_ARGS="-h --stats --progress"
+#RSYNC_BONUS_ARGS="-h --stats --progress --bwlimit=1290"
 MIRROR_ROOT=/var/www/html/pub/mirrors/fedora
 LOCK_FILE=/var/run/mirror-fedora/running
 LAST_RUN=/usr/share/mirror-fedora/last-run
@@ -51,7 +51,7 @@ else
 fi
 
 # get time of last run in format suitable for MM query
-if [ -r "$LAST_RUN"]; then
+if [ -r "$LAST_RUN" ]; then
     last_run_epoch_utc=$(date --utc +%s --date "`stat --printf %z $LAST_RUN`")
 else
     last_run_epoch_utc=0
@@ -98,7 +98,7 @@ $LOGGER "end sync"
 #       23     Partial transfer due to error
 #       24     Partial transfer due to vanished source files
 if [ $? -eq 0 -o $? -eq 23 -o $? -eq 24 ]; then
-	touch --date @$($start_time - 30) $LAST_RUN
+	touch --date "@$(($start_time - 30))" $LAST_RUN
 	# update mirror status in the MirrorManager database
 	$LOGGER "reporting to mirrormanager"
 	report_mirror
@@ -109,4 +109,4 @@ fi
 
 rm -f "$unchanged_content_exclude"
 rm -f "$LOCK_FILE"
-$LOGGER -i -s "stop"
+$LOGGER "stop"
